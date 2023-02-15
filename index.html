@@ -43,7 +43,7 @@
         <div class="box protagonist" id="box"></div>
     </div>
     <script>
-        const box = document.getElementById("box");
+        const hero = document.getElementById("box");
         let boxLeft = 50;
         let boxTop = 50;
         let speed = 1;
@@ -51,7 +51,7 @@
         let velocityX = 0;
         let velocityY = 0;
 
-        class Box {
+        class Zombie {
             constructor(id, x, y) {
                 this.element = document.getElementById(id);
                 this.x = x;
@@ -189,7 +189,7 @@
             enemyDomElement.setAttribute("id", "enemy" + enemyCount);
             document.getElementsByClassName('container')[0].appendChild(enemyDomElement);
 
-            const enemy = new Box("enemy" + enemyCount, 50, 50);
+            const enemy = new Zombie("enemy" + enemyCount, 50, 50);
             enemies.push(enemy);
             enemyCount++;
         }
@@ -198,10 +198,10 @@
         // Game loop
         setInterval(function () {
             requestAnimationFrame(function () {
-                const boxWidth = box.offsetWidth;
-                const boxHeight = box.offsetHeight;
-                const containerWidth = box.parentNode.offsetWidth;
-                const containerHeight = box.parentNode.offsetHeight;
+                const boxWidth = hero.offsetWidth;
+                const boxHeight = hero.offsetHeight;
+                const containerWidth = hero.parentNode.offsetWidth;
+                const containerHeight = hero.parentNode.offsetHeight;
 
                 // Move the box based on the state of the keys
                 if (wPressed) {
@@ -229,14 +229,14 @@
                 boxLeft = Math.max(0, Math.min(containerWidth - boxWidth, boxLeft));
                 boxTop = Math.max(0, Math.min(containerHeight - boxHeight, boxTop));
 
-                box.style.left = boxLeft + "px";
-                box.style.top = boxTop + "px";
+                hero.style.left = boxLeft + "px";
+                hero.style.top = boxTop + "px";
 
                 let numberOfEnemies = enemies.length;
                 
                 // Update the enemies
                 for (let i = 0; i < numberOfEnemies; i++) {
-                    enemies[i].moveTowardsElement(box, 1);
+                    enemies[i].moveTowardsElement(hero, 1);
 
                     //repel from other enemies
                     for (let j = 0; j < numberOfEnemies; j++) {
@@ -248,7 +248,7 @@
                     }
 
                     enemies[i].update();
-                    if (enemies[i].detectCollision(box)) {
+                    if (enemies[i].detectCollision(hero)) {
                         //remove this entry from the array and destroy the enemy
                         var enemy = enemies[i];
                         enemies.splice(i, 1);
