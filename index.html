@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            height: 100vh;
+            margin: 0;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .container {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: url('/img/bg-texture.jpg');
+        }
+
+        .box {
+            height: 90px;
+            width: 50px;
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+
+        .protagonist {
+            background-image: url('/img/really-happy.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .evil {
+            background-image: url('/img/zombie.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="box protagonist" id="box"></div>
+    </div>
+    <script>
+        const box = document.getElementById("box");
+        let boxLeft = 50;
+        let boxTop = 50;
+        let speed = 1;
+        let friction = 0.9;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        class Box {
+            constructor(id, x, y) {
+                this.element = document.getElementById(id);
+                this.x = x;
+                this.y = y;
+                this.speedX = 0;
+                this.speedY = 0;
+                this.friction = 0.9;
+                this.maxSpeed = 10;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedX *= this.friction;
+                this.speedY *= this.friction;
+
+                // Keep the box within the bounds of the container
+                this.x = Math.max(0, Math.min(this.element.parentNode.offsetWidth - 50, this.x));
+                this.y = Math.max(0, Math.min(this.element.parentNode.offsetHeight - 50, this.y));
+
+                // Update the position of the box
+                this.element.style.left = this.x + "px";
+                this.element.style.top = this.y + "px";
+            }
+
+            getDirectionAndLocation() {
+                return {
+                    directionX: this.speedX > 0 ? 1 : this.speedX < 0 ? -1 : 0,
+                    directionY: this.speedY > 0 ? 1 : this.speedY < 0 ? -1 : 0,
+                    x: this.x,
+                    y: this.y
+                };
+            }
+
+            detectCollision(otherElement) {
+                return (
+                    this.elementsOverlap(otherElement)
+                );
+            }
+
+            destroy(){
+                this.element.remove();
+            }
+
+            moveTowardsElement(otherElement, speed) {
+                let rect1 = this.element.getBoundingClientRect();
+                let rect2 = otherElement.getBoundingClientRect();
+
+                let x1 = rect1.left + rect1.width / 2;
+                let y1 = rect1.top + rect1.height / 2;
+                let x2 = rect2.left + rect2.width / 2;
+                let y2 = rect2.top + rect2.height / 2;
+
+                let xDistance = x2 - x1;
+                let yDistance = y2 - y1;
+                let distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+
+                let xMovement = xDistance / distance * speed;
+                let yMovement = yDistance / distance * speed;
+
+                this.speedX += xMovement;
+                this.speedY += yMovement;
+
+                // Ensure that the speed does not exceed the maximum speed
+                let speed1 = Math.sqrt(this.speedX * this.speedX + this.speedY * this.speedY);
+                if (speed1 > this.maxSpeed) {
+                    this.speedX *= this.maxSpeed / speed1;
+                    this.speedY *= this.maxSpeed / speed1;
+                }
+
+            }
+        
+            elementsOverlap(element) {
+                let rect1 = this.element.getBoundingClientRect();
+                let rect2 = element.getBoundingClientRect();
+
+                return !(
+                    (rect1.bottom < rect2.top) || (rect1.top > rect2.bottom) || (rect1.right < rect2.left) || (rect1.left > rect2.right)
+                );
+            }
+        }
+        
+        //#region Controls
+
+        let wPressed = false;
+        let aPressed = false;
+        let sPressed = false;
+        let dPressed = false;
+
+        document.addEventListener("keydown", function (event) {
+            // Update the state of the keys based on the key press
+            switch (event.key) {
+                case "w":
+                    wPressed = true;
+                    break;
+                case "a":
+                    aPressed = true;
+                    break;
+                case "s":
+                    sPressed = true;
+                    break;
+                case "d":
+                    dPressed = true;
+                    break;
+            }
+        });
+
+        document.addEventListener("keyup", function (event) {
+            // Update the state of the keys based on the key release
+            switch (event.key) {
+                case "w":
+                    wPressed = false;
+                    break;
+                case "a":
+                    aPressed = false;
+                    break;
+                case "s":
+                    sPressed = false;
+                    break;
+                case "d":
+                    dPressed = false;
+                    break;
+            }
+        });
+
+        //#endregion
+
+        //#region Enemies
+
+        let enemies = [];
+        let enemyCount = 1;
+        function createEnemy() {
+            var enemyDomElement = document.createElement("div");
+            enemyDomElement.setAttribute("class", "box evil")
+            enemyDomElement.setAttribute("id", "enemy" + enemyCount);
+            document.getElementsByClassName('container')[0].appendChild(enemyDomElement);
+
+            const enemy = new Box("enemy" + enemyCount, 50, 50);
+            enemies.push(enemy);
+            enemyCount++;
+        }
+        //#endregion
+
+        // Game loop
+        setInterval(function () {
+            requestAnimationFrame(function () {
+                const boxWidth = box.offsetWidth;
+                const boxHeight = box.offsetHeight;
+                const containerWidth = box.parentNode.offsetWidth;
+                const containerHeight = box.parentNode.offsetHeight;
+
+                // Move the box based on the state of the keys
+                if (wPressed) {
+                    velocityY -= speed;
+                }
+                if (aPressed) {
+                    velocityX -= speed;
+                }
+                if (sPressed) {
+                    velocityY += speed;
+                }
+                if (dPressed) {
+                    velocityX += speed;
+                }
+
+                // Add friction to the movement
+                velocityX *= friction;
+                velocityY *= friction;
+
+                // Update the position of the box
+                boxLeft += velocityX;
+                boxTop += velocityY;
+
+                // Keep the box within the bounds of the container
+                boxLeft = Math.max(0, Math.min(containerWidth - boxWidth, boxLeft));
+                boxTop = Math.max(0, Math.min(containerHeight - boxHeight, boxTop));
+
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+
+                let numberOfEnemies = enemies.length;
+                
+                // Update the enemies
+                for (let i = 0; i < numberOfEnemies; i++) {
+                    enemies[i].moveTowardsElement(box, 1);
+
+                    //repel from other enemies
+                    for (let j = 0; j < numberOfEnemies; j++) {
+                        if (i != j) {
+                            if (enemies[i].elementsOverlap(enemies[j].element)) {
+                                enemies[i].moveTowardsElement(enemies[j].element, -1);
+                            }
+                        }
+                    }
+
+                    enemies[i].update();
+                    if (enemies[i].detectCollision(box)) {
+                        //remove this entry from the array and destroy the enemy
+                        var enemy = enemies[i];
+                        enemies.splice(i, 1);
+                        enemy.destroy();
+                    }
+                }
+            })
+        }, 16);
+
+        //create an enemy every 10 seconds after the first key press
+        let firstKeyPress = false;
+        document.addEventListener("keydown", function (event) {
+            if (!firstKeyPress) {
+                firstKeyPress = true;
+                setInterval(createEnemy, 2000);
+            }
+        });
+    </script>
+</body>
+
+</html>
